@@ -69,8 +69,26 @@ metrics = evaluate(
      - `simulated_cold` (`segment=all`, `n=12`, excluded from `all`): `graph_only` FillRate@3=`0.0000`, `hybrid`=`1.0000`, `popular`=`1.0000`.
    - Note: These stub numbers verify pipeline/artifact mechanics ONLY and are NOT a real recommender evaluation.
 
+### Temporary Local Integration Check with Contributor 2 (`origin/feature/02-recommender`)
+Per Git Rule 8, a separate temporary local `integration-check` checkout (never pushed, never merged into `feature/03-evaluation`) was run combining:
+- `origin/main`: `2f2dbe47b82b0860e0eb43ecfd8dbecc138e19d5`
+- `origin/feature/02-recommender`: `38f7ab6e7eaebe1c81d396de39d0ed8465e0a99a`
+- `feature/03-evaluation`: includes the `monkeypatch` fix for `test_production_evaluate_has_no_hidden_stub_when_recommender_missing`
+
+Results with the **real `reco_mvp.recommender.Recommender`** (`data_mode="synthetic"`, `as_of="2026-06-01T00:00:00Z"`, `horizon_days=30`):
+- **All tests (`python -m pytest tests -v`)**: `34 passed` (including direct `Recommender.fit` temporal leakage test).
+- **Contract / filter violations**: `0` across `popular`, `graph_only`, `hybrid`.
+- **Main cohort (`segment=all`, `cohort=all`, `n_customers=61`, `n_with_future_purchase=10`)**:
+  - `popular`: `Precision@3=0.0109`, `HitRate@3=0.0328`, `FillRate@3=1.0000`, `FullListRate=1.0000`, `CatalogCoverage=1.0000`
+  - `graph_only`: `Precision@3=0.0546`, `HitRate@3=0.1639`, `FillRate@3=0.9836`, `FullListRate=0.9836`, `CatalogCoverage=1.0000`
+  - `hybrid`: `Precision@3=0.0546`, `HitRate@3=0.1639`, `FillRate@3=1.0000`, `FullListRate=1.0000`, `CatalogCoverage=1.0000`
+  - `hybrid vs popular` (`Precision@3`): `+4.37 pp` (`+400.0%` relative), 95% paired customer bootstrap CI `[+1.64 pp, +7.65 pp]` (synthetic mechanics check only; no conclusions about real customers).
+- **Cold start (separate from `all`)**:
+  - `natural_cold` (`n=1`): `graph_only` FillRate@3=`0.0000`, `hybrid`=`1.0000`, `popular`=`1.0000`.
+  - `simulated_cold` (`n=12`): `graph_only` FillRate@3=`0.0000`, `hybrid`=`1.0000`, `popular`=`1.0000`.
+
 ### What Was NOT Verified (Blockers & Limitations)
-- **BLOCKER — Final backtest NOT completed**: `reco_mvp.recommender.Recommender` (Contributor 2, branch `feature/02-recommender`) is not yet published on `origin` or merged into `main`. Final backtest results on synthetic data must be re-run once Contributor 2's branch is available/merged.
+- **Dependency on Contributor 2 PR merge**: `origin/feature/02-recommender` (`38f7ab6`) is verified in temporary local `integration-check`, but its PR into `main` must still be opened and merged before PR #1 (`feature/03-evaluation`) per merge order `1 → 2 → 3 → 4`.
 - **Real data unavailable**: No authorized real sales/catalog export or `local_mapping.json` is present in this workspace; real-data backtest could not be executed.
 - **No business uplift or revenue conclusions**: `data_mode="synthetic"` proves nothing about real customers; prices and personal-account impression logs are absent.
 
