@@ -156,8 +156,11 @@ class _TestOnlyRecommenderStub:
         }
 
 
-def test_production_evaluate_has_no_hidden_stub_when_recommender_missing(tmp_path):
+def test_production_evaluate_has_no_hidden_stub_when_recommender_missing(tmp_path, monkeypatch):
     """Production evaluate() MUST fail clearly if Agent 2's recommender is absent."""
+    import sys
+
+    monkeypatch.setitem(sys.modules, "reco_mvp.recommender", None)
     bundle = make_synthetic_bundle()
     with pytest.raises(ImportError, match="reco_mvp.recommender"):
         evaluate(
