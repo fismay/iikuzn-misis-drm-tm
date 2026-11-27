@@ -54,3 +54,93 @@ raw files. Recommendation explanations must be based on actual model output.
 Evaluation must respect temporal boundaries and report null for empty groups.
 See the contract and handoff for the complete details.
 
+## Architecture decisions
+
+### Chosen architecture
+
+The MVP is a small Python `src/` package with four deliberately separated
+layers:
+
+1. **Data layer (`reco_mvp.data`)** normalizes an authorized CSV/XLSX export into
+   one JSON-compatible Bundle and writes a quality report.
+2. **Recommender (`reco_mvp.recommender`)** will consume only the validated
+   Bundle and implement popular, graph-only, and hybrid strategies.
+3. **Evaluation (`reco_mvp.evaluation`)** will perform a time-based cross-sell
+   backtest and emit auditable JSON/CSV/JSONL/Markdown artifacts.
+4. **Demo/integration (`app/`)** will connect those modules without changing
+   their contracts.
+
+The Bundle is the seam between agents. It keeps IDs as strings, timestamps
+timezone-aware, warnings visible, and `synthetic` versus `real` explicit. This
+allows agents 2–4 to work against deterministic data without pretending that
+unavailable source data exists.
+
+### Why these technologies
+
+- Python 3.11+ keeps the one-day implementation and demo simple.
+- JSON/CSV/XLSX are enough for the supplied data shape and are easy to inspect.
+- pandas/openpyxl are declared for tabular input; the core contract validator
+  uses only the standard library.
+- A plain co-purchase graph in memory is sufficient for this scale; it is
+  explainable and easy to backtest.
+- pytest and GitHub Actions provide a small repeatable safety net before merge.
+
+### Explicitly rejected for this MVP
+
+- **LLM calls/neural networks:** no evidence or time budget justifies them, and
+  deterministic explanations are more important for a judging demo.
+- **Graph database:** the task needs a small derived graph, not operational
+  graph storage; an in-memory representation avoids deployment failure points.
+- **Microservices/Kubernetes/separate frontend/backend:** they add interfaces
+  and setup time without improving the requested recommendation proof.
+- **Automatic synthetic fallback in real mode:** it would hide missing access or
+  schema errors and invalidate the demo's claims.
+- **Revenue/uplift claims:** prices and exposure events are absent, so the
+  stated 15–25% and 10–15% figures remain hypotheses only.
+- **Blind column autodetection:** ambiguous mappings can silently corrupt a
+  backtest; real inputs require an explicit mapping JSON.
+
+## Data flow and reproducibility
+
+```text
+authorized CSV/XLSX + mapping.json
+              |
+              v
+  reco_mvp.data.prepare_dataset
+       |                 |
+       v                 v
+   bundle.json      quality_report.json
+       |
+       +--> recommender.fit(bundle, as_of)
+       +--> evaluation.evaluate(bundle, as_of, horizon_days)
+       +--> Streamlit demo / artifacts (ignored by Git)
+```
+
+The synthetic cutoff is `2026-06-01T00:00:00Z` with a 30-day horizon and
+`observation_end` of `2026-07-01T00:00:00Z`. Any real run must state its own
+cutoff, horizon, source coverage, timezone assumption, and catalog-history
+limitations. Generated artifacts stay under ignored `artifacts/`.
+
+## Agent continuation checklist
+
+Before editing:
+
+```bash
+git status --short --branch
+git log --oneline -3
+git remote -v
+sed -n '1,240p' contracts/CONTRACT.md
+sed -n '1,240p' docs/handoffs/01-data.md
+```
+
+After editing:
+
+```bash
+git diff --check
+python -m pytest tests -q
+git diff --cached --name-only
+```
+
+Add only owned paths to each commit. The merge order remains agent 1, then 2,
+then 3, then 4. If a later agent needs a contract change, document the exact
+request in its handoff rather than editing `contracts/` opportunistically.
