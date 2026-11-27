@@ -9,6 +9,9 @@ from contracts.validate import validate_bundle
 from .synthetic import make_synthetic_bundle
 
 
+_REJECTED_STATUSES = {"cancelled", "canceled", "returned", "refunded", "void", "failed"}
+
+
 def load_bundle(path: str) -> dict:
     with Path(path).open(encoding="utf-8") as handle:
         return validate_bundle(json.load(handle))
@@ -32,6 +35,7 @@ def prepare_dataset(input_dir: str | None, output_dir: str, *, synthetic: bool =
               "observation_end": bundle["metadata"]["observation_end"],
               "warnings": bundle["metadata"]["warnings"], "timezone_assumption": "UTC in synthetic data",
               "catalog_history_available": bundle["metadata"]["catalog_history_available"]}
+    report.update(bundle["metadata"].get("quality", {}))
     (out / "quality_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     return bundle
 
@@ -66,6 +70,17 @@ def _timestamp(value: str, source: str) -> str:
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _segments(value: object) -> list[str] | None:
+    if value is None or str(value).strip() == "":
+        return None
+    if isinstance(value, list):
+        values = value
+    else:
+        values = str(value).replace(";", ",").split(",")
+    result = [str(item).strip() for item in values if str(item).strip()]
+    return result or None
+
+
 def _read_real(input_dir: Path, mapping_path: Path) -> dict:
     mapping = json.loads(mapping_path.read_text(encoding="utf-8"))
     source_rows = {}
@@ -95,21 +110,35 @@ def _read_real(input_dir: Path, mapping_path: Path) -> dict:
             active = None if active_value in (None, "") else str(active_value).lower() in {"1", "true", "yes"}
             products.append({"product_id": pid, "name": _required(row, spec.get("name", "name"), source),
                 "category": row.get(spec.get("category", "category")) or None,
-                "eligible_segments": None, "active": active, "available_from": None})
+                "eligible_segments": _segments(row.get(spec.get("eligible_segments", "eligible_segments"))),
+                "active": active,
+                "available_from": (_timestamp(str(row[spec["available_from"]]), source)
+                                   if spec.get("available_from") and row.get(spec["available_from"]) else None)})
     transactions = []
+    dropped_transactions = 0
     for spec, rows, source in [source_rows["transactions"]]:
         for index, row in enumerate(rows, 1):
+            quantity = float(row.get(spec.get("quantity", "quantity"), 1) or 1)
+            status = str(row.get(spec.get("status", "status"), "")).strip().lower()
+            if quantity <= 0 or status in _REJECTED_STATUSES:
+                dropped_transactions += 1
+                continue
             transactions.append({"transaction_id": _required(row, spec.get("transaction_id", "transaction_id"), source),
                 "order_id": row.get(spec.get("order_id", "order_id")) or None,
                 "customer_id": _required(row, spec.get("customer_id", "customer_id"), source),
                 "product_id": _required(row, spec.get("product_id", "product_id"), source),
                 "purchased_at": _timestamp(_required(row, spec.get("purchased_at", "purchased_at"), source), source),
-                "quantity": float(row.get(spec.get("quantity", "quantity"), 1) or 1)})
+                "quantity": quantity})
     dates = [row["purchased_at"] for row in transactions]
     observation_end = max(dates) if dates else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    warnings = ["Observation end inferred from maximum transaction timestamp; verify export coverage."]
+    if dropped_transactions:
+        warnings.append(f"Dropped {dropped_transactions} unsuccessful transaction rows.")
     bundle = {"schema_version": "1.0", "data_mode": "real", "customers": customers,
         "products": products, "transactions": transactions,
         "metadata": {"observation_end": observation_end,
-            "warnings": ["Observation end inferred from maximum transaction timestamp; verify export coverage."],
+            "warnings": warnings,
             "segment_source": "mapped source", "catalog_history_available": False}}
+    bundle["metadata"]["quality"] = {"transactions_dropped": dropped_transactions,
+                                       "transactions_read": len(transactions) + dropped_transactions}
     return validate_bundle(bundle)
