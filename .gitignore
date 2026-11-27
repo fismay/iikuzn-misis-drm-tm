@@ -2,6 +2,7 @@
 __pycache__/
 .pytest_cache/
 *.py[cod]
+*.egg-info/
 .env
 .env.*
 !.env.example
@@ -11,4 +12,3 @@ data/local_mapping.json
 artifacts/
 *.xlsx
 *.xls
-
