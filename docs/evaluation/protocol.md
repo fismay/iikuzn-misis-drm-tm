@@ -1,6 +1,6 @@
 # Evaluation Protocol (`reco_mvp.evaluation`)
 
-This document specifies the independent time-based cross-sell backtest protocol implemented by Agent 3 (`src/reco_mvp/evaluation/`) under Shared Contract v1 (`contracts/CONTRACT.md`).
+This document specifies the independent time-based cross-sell backtest protocol implemented in `src/reco_mvp/evaluation/` under Shared Contract v1 (`contracts/CONTRACT.md`).
 
 ## 1. Public API and Artifacts
 
@@ -16,7 +16,7 @@ metrics = evaluate(
 )
 ```
 
-`evaluate(...)` requires the real `reco_mvp.recommender.Recommender` from Agent 2 (`agent/02-recommender`). Production code contains **no hidden fallback stub**: if `reco_mvp.recommender` is absent, `evaluate()` raises a clear `ImportError`.
+`evaluate(...)` requires the real `reco_mvp.recommender.Recommender` from the recommender package. Production code contains **no hidden fallback stub**: if `reco_mvp.recommender` is absent, `evaluate()` raises a clear `ImportError`.
 
 ### Generated Artifacts in `output_dir` (Git-ignored)
 1. `metrics.json` — full contract output (`schema_version`, `data_mode`, `protocol`, `warnings`, `rows`).

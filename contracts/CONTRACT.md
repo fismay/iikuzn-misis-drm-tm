@@ -1,7 +1,6 @@
 # Shared contract v1
 
-This document is the source of truth for agents 1–4. Do not add mandatory fields
-or rename public functions without agreement from all owners.
+This document defines the shared data format and public interfaces.
 
 ## Conventions
 
@@ -44,9 +43,8 @@ required mapping or columns are missing; it must not silently fall back to data.
 
 ## Recommendation and evaluation APIs
 
-Agents 2 and 3 implement the exact signatures from the prompts:
+The public interfaces are:
 `Recommender.fit/recommend` and `evaluate`. Their output must retain
 `schema_version`, `data_mode`, warnings, deterministic ranks, and honest nulls
-for empty metric groups. The complete original role prompts are preserved in
-`C:\Users\heckl\hackathon\prompts` on the working host.
+for empty metric groups.
 
