@@ -29,13 +29,13 @@ from .report import (
 
 
 def _default_recommender_factory(config: dict | None = None) -> Any:
-    """Resolve the real Agent 2 Recommender without any hidden production stub."""
+    """Resolve the production recommender without a fallback stub."""
     try:
         from reco_mvp.recommender import Recommender
     except ImportError as exc:
         raise ImportError(
             "reco_mvp.recommender.Recommender is not available in this checkout "
-            "(depends on Agent 2 branch agent/02-recommender). "
+            "(install the project package). "
             "Production evaluation does not use a stub fallback."
         ) from exc
     return Recommender(config)
