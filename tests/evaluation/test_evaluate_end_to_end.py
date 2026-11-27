@@ -516,4 +516,3 @@ def test_real_recommender_fit_ignores_future_transactions_when_available():
             assert [x["product_id"] for x in r_full["recommendations"]] == [
                 x["product_id"] for x in r_pre["recommendations"]
             ]
-
