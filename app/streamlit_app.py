@@ -5,6 +5,9 @@ import json
 import sys
 from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
+from app.graph import render_graph
+from datetime import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--artifact-dir', required=True)
@@ -26,7 +29,7 @@ if not labels:
     st.info('Нет клиентов для демонстрации'); st.stop()
 case = cases[labels.index(st.selectbox('Выберите клиента', labels))]
 products = {p['product_id']: p['name'] for p in bundle['products']}
-history = sorted({t['product_id'] for t in bundle['transactions'] if t['customer_id'] == case['customer_id'] and t['purchased_at'] < manifest['as_of']})
+history = sorted({t['product_id'] for t in bundle['transactions'] if t['customer_id'] == case['customer_id'] and datetime.fromisoformat(t['purchased_at'].replace('Z', '+00:00')) < datetime.fromisoformat(manifest['as_of'].replace('Z', '+00:00'))})
 st.subheader('История покупок')
 st.write(', '.join(products.get(x, x) for x in history) or 'Покупок до даты отсечения нет')
 st.subheader(f"Рекомендации: {len(case['recommendations'])} из 3")
@@ -34,9 +37,7 @@ for r in case['recommendations']:
     st.markdown(f"**{html.escape(str(r['product_name']))}**")
     st.write(r['reason_text'], f"Подтверждений: {r['support_count']}", '· Резервная выдача' if r['is_fallback'] else '')
 st.subheader('Почему выбраны эти товары')
-for r in case['recommendations']:
-    sources = ', '.join(products.get(x, x) for x in r['source_product_ids']) or ('Популярность сегмента' if r['reason_type'] == 'segment_popularity' else 'Общая популярность')
-    st.text(f"{sources}  →  {r['product_name']}  (подтверждений: {r['support_count']})")
+components.html(render_graph(case, products), height=max(170, 50 + 100 * len(case['recommendations'])), scrolling=False)
 st.subheader('Результаты бэктеста')
 st.dataframe(metrics.get('rows', []), hide_index=True)
 for warning in list(dict.fromkeys(bundle['metadata'].get('warnings', []) + metrics.get('warnings', []) + case.get('warnings', []))):
