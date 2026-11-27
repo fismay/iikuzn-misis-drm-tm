@@ -51,15 +51,19 @@ metrics = evaluate(
 
 ## 3. Verification Status & Measured Results
 
-### What Was Verified
-1. **Local test suite (`python -m pytest tests -v`)**: `17 passed, 1 skipped` (only `test_real_recommender_fit_ignores_future_transactions_when_available` skipped because `reco_mvp.recommender` is not yet merged).
+### What Was Verified (After Merging `origin/main` `2f2dbe4`)
+1. **Local test suite (`python -m pytest tests -v`)**: `19 passed, 1 skipped` (only `test_real_recommender_fit_ignores_future_transactions_when_available` skipped because `reco_mvp.recommender` is not yet merged).
 2. **Hand-calculated 3-customer manual verification (`data_mode="real"` fixture + pure metric unit test)**:
    - Pure metric test: `n=3`, `n_with_future_purchase=2`, `Precision@3=0.3333` (`1/3`), `HitRate@3=0.6667` (`2/3`), `FillRate@3=0.8889` (`8/9`), `FullListRate=0.6667` (`2/3`), `CatalogCoverage=1.0000`.
    - End-to-end 3-customer scripted fixture: `Precision@3=0.2222` (`2/9`), `HitRate@3=0.6667` (`2/3`), `FillRate@3=0.6667` (`2/3`), `FullListRate=0.3333` (`1/3`), `CatalogCoverage=1.0000`; `natural_cold` (`n=0`) emits `null` metrics; `simulated_cold` (`n=1`) does not credit repeat purchases as cross-sell hits.
-3. **Synthetic bundle dry-run WITH TEST-ONLY STUB (`data_mode="synthetic"`, `as_of="2026-06-01T00:00:00Z"`, `horizon_days=30`)**:
-   - Main cohort (`all`): `n_customers=61` (`one_purchase=0`, `warm=60`, `natural_cold=1`, `excluded_future_new_customers=0`).
-   - Eligible historical catalog at cutoff: `6` of `15` products (`P01..P05` via pre-cutoff sales + `P14` via `available_from="2026-05-15T00:00:00Z" <= as_of`; `P15` inactive; `8` unobserved products with `available_from=None` excluded conservatively).
-   - Future window `[2026-06-01T00:00:00Z, 2026-07-01T00:00:00Z)`: `12` raw future transactions, `0` valid cross-sell targets, `12` excluded as `unobserved_without_available_from` (all 12 future purchases in Agent 1's synthetic generator are for `P06`, which has `available_from=None` and 0 pre-cutoff sales).
+3. **Updated synthetic bundle (`2f2dbe4`) dry-run WITH TEST-ONLY STUB (`data_mode="synthetic"`, `as_of="2026-06-01T00:00:00Z"`, `horizon_days=30`)**:
+   - Main cohort (`all`): `n_customers=61` (`one_purchase=60`, `warm=0`, `natural_cold=1`, `excluded_future_new_customers=0`).
+   - Eligible historical catalog at cutoff: `7` of `15` products (`B2B=7`, `B2C=6`, `unknown=6`; `excluded_inactive=1`, `excluded_late_available_from=2`, `excluded_unobserved_without_available_from=5`).
+   - Future window `[2026-06-01T00:00:00Z, 2026-07-01T00:00:00Z)`: `16` raw future transactions, `10` valid cross-sell targets, `6` excluded as `late_product_available_after_cutoff`.
+   - Test-stub main (`all`) metrics (mechanics check ONLY, not real recommender):
+     - `popular`: `Precision@3=0.0109`, `HitRate@3=0.0328`, `FillRate@3=1.0000`
+     - `graph_only`: `Precision@3=0.0546`, `HitRate@3=0.1639`, `FillRate@3=0.9836`
+     - `hybrid`: `Precision@3=0.0546`, `HitRate@3=0.1639`, `FillRate@3=1.0000`
    - Cold-start fill rate with test stub:
      - `natural_cold` (`segment=all`, `n=1`): `graph_only` FillRate@3=`0.0000`, `hybrid`=`1.0000`, `popular`=`1.0000`.
      - `simulated_cold` (`segment=all`, `n=12`, excluded from `all`): `graph_only` FillRate@3=`0.0000`, `hybrid`=`1.0000`, `popular`=`1.0000`.
