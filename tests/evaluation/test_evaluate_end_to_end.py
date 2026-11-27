@@ -157,7 +157,7 @@ class _TestOnlyRecommenderStub:
 
 
 def test_production_evaluate_has_no_hidden_stub_when_recommender_missing(tmp_path, monkeypatch):
-    """Production evaluate() MUST fail clearly if Agent 2's recommender is absent."""
+    """Production evaluate() MUST fail clearly if the recommender is absent."""
     import sys
 
     monkeypatch.setitem(sys.modules, "reco_mvp.recommender", None)
@@ -488,10 +488,10 @@ def test_structural_contract_violations_raise_clear_errors(tmp_path):
 
 
 def test_real_recommender_fit_ignores_future_transactions_when_available():
-    """Direct fit-level leakage guard against Agent 2's Recommender once merged."""
+    """Direct fit-level leakage guard against Recommender once merged."""
     recommender_mod = pytest.importorskip(
         "reco_mvp.recommender",
-        reason="Agent 2 (reco_mvp.recommender) not yet merged in this branch",
+        reason="reco_mvp.recommender is not available",
     )
     Recommender = recommender_mod.Recommender
 
