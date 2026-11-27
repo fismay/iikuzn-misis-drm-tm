@@ -8,14 +8,17 @@
   repeated timed purchases, segment restriction, inactive product, future-only
   catalog product, and a full 30-day cutoff window ending 2026-07-01.
 - Root packaging, dependencies, tests, and CI-safe project layout.
+- Synthetic warm/cold-start targets with a separate future-only product, plus
+  real-loader quality counts for filtered returns/cancellations.
 - Detailed README for future contributors and this handoff.
 
 ## Known data limitation
 
 The Drive source could not be opened in the available environment and the GitHub
 repository was empty at bootstrap time. No client rows were copied. Real mode
-requires an explicit mapping and currently raises a clear `NotImplementedError`
-rather than silently substituting synthetic data.
+requires an explicit mapping, preserves mapped catalog fields, and records
+filtered unsuccessful rows in `quality_report.json`; it never silently falls
+back to synthetic data.
 
 ## For contributors 2–4
 
@@ -29,4 +32,3 @@ history as visible limitations.
 
 `python -m pytest tests -q` and `python -m pip install -e .` are the expected
 checks for this branch. The full pipeline and UI belong to contributors 2–4.
-

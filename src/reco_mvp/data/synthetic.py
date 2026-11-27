@@ -20,7 +20,12 @@ def make_synthetic_bundle(seed: int = 42) -> dict:
             "product_id": f"P{i+1:02d}", "name": f"Synthetic product {i+1}",
             "category": "core" if i < 5 else "addon", "eligible_segments": ["B2B"] if i == 10 else None,
             "active": False if i == 14 else True,
-            "available_from": "2026-05-15T00:00:00Z" if i == 13 else None,
+            "available_from": (
+                "2026-06-15T00:00:00Z" if i == 5 else
+                "2026-02-01T00:00:00Z" if i == 6 else
+                "2026-01-15T00:00:00Z" if i == 10 else
+                "2026-06-20T00:00:00Z" if i == 13 else None
+            ),
         })
     transactions = []
     base = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -28,16 +33,25 @@ def make_synthetic_bundle(seed: int = 42) -> dict:
     for i in range(60):
         cid = f"C{i+1:03d}"
         segment_offset = 0 if i % 3 == 0 else 1
-        purchased = [1 + (i % 5), 3 + segment_offset]
-        if i % 4 == 0:
+        purchased = [1 + (i % 5)] if i % 10 == 0 else [1 + (i % 5), 3 + segment_offset]
+        if i % 4 == 0 and i % 10 != 0:
             purchased.append(5)
+        if i % 6 == 1:
+            purchased.append(7)
+        if i % 9 == 0 and segment_offset == 0 and i % 10 != 0:
+            purchased.append(11)
         for j, product_no in enumerate(purchased):
             n += 1
-            transactions.append({"transaction_id": f"T{n:04d}", "order_id": f"O{i+1:03d}-{j+1}",
+            transactions.append({"transaction_id": f"T{n:04d}", "order_id": f"O{i+1:03d}",
                 "customer_id": cid, "product_id": f"P{product_no:02d}",
                 "purchased_at": (base + timedelta(days=i * 2 + j)).isoformat().replace("+00:00", "Z"),
                 "quantity": 1.0})
-        if i % 5 == 0:
+        if i % 6 == 2:
+            n += 1
+            transactions.append({"transaction_id": f"T{n:04d}", "order_id": f"O{i+1:03d}-future-addon",
+                "customer_id": cid, "product_id": "P07",
+                "purchased_at": "2026-06-10T00:00:00Z", "quantity": 1.0})
+        if i % 5 == 0 and i % 10 != 0:
             n += 1
             transactions.append({"transaction_id": f"T{n:04d}", "order_id": f"O{i+1:03d}-future",
                 "customer_id": cid, "product_id": "P06",
@@ -50,4 +64,3 @@ def make_synthetic_bundle(seed: int = 42) -> dict:
             "Catalog history is incomplete by design."], "segment_source": "synthetic",
             "catalog_history_available": False}}
     return validate_bundle(bundle)
-
