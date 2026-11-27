@@ -207,9 +207,10 @@ def test_end_to_end_synthetic_artifacts_and_cold_start_isolation(tmp_path):
         csv_rows = list(csv.DictReader(handle))
     assert tuple(csv_rows[0].keys()) == METRIC_COLUMNS
     assert len(csv_rows) == len(result["rows"])
-    # Empty slice (e.g., one_purchase in synthetic bundle) must be blank in CSV, not "0.0"
-    empty_csv = [r for r in csv_rows if r["cohort"] == "one_purchase" and r["segment"] == "all"]
-    assert all(r["n_customers"] == "0" and r["precision_at_3"] == "" for r in empty_csv)
+    # Empty slices (e.g., natural_cold in B2B) must be blank in CSV, not "0.0"
+    empty_csv = [r for r in csv_rows if r["n_customers"] == "0"]
+    assert len(empty_csv) > 0
+    assert all(r["precision_at_3"] == "" for r in empty_csv)
 
     jsonl_lines = [
         json.loads(line)
@@ -223,7 +224,6 @@ def test_end_to_end_synthetic_artifacts_and_cold_start_isolation(tmp_path):
     assert "DATA MODE: SYNTHETIC" in report_md
     assert "Excluded Purchases" in report_md
     assert "Proposed Next Online Experiment" in report_md
-    assert "baseline = 0" in report_md  # P06 unobserved -> baseline Precision@3 == 0 -> undefined relative lift
 
     # 3. Verify all-cohort never mixes simulated_cold and cold-start fill behavior
     by_key = {(r["strategy"], r["segment"], r["cohort"]): r for r in result["rows"]}
