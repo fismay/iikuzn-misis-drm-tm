@@ -1,0 +1,209 @@
+{
+  "split": {
+    "train_end": "2026-08-31",
+    "test_start": "2026-09-07"
+  },
+  "cohort_sizes": {
+    "A": 337,
+    "B": 172
+  },
+  "methods": {
+    "baseline_popularity": {
+      "A": {
+        "all": {
+          "n_customers": 337,
+          "precision_at_3": 0.05440158259149357,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.0
+        },
+        "B2B": {
+          "n_customers": 302,
+          "precision_at_3": 0.037527593818984545,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.0
+        },
+        "B2C": {
+          "n_customers": 35,
+          "precision_at_3": 0.2,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.0
+        }
+      },
+      "B": {
+        "all": {
+          "n_customers": 172,
+          "precision_at_3": 0.07364341085271318,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.0
+        },
+        "B2B": {
+          "n_customers": 147,
+          "precision_at_3": 0.05215419501133787,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.0
+        },
+        "B2C": {
+          "n_customers": 25,
+          "precision_at_3": 0.2,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.0
+        }
+      }
+    },
+    "baseline_copurchase": {
+      "A": {
+        "all": {
+          "n_customers": 337,
+          "precision_at_3": 0.05637982195845697,
+          "fill_rate": 0.9228486646884273,
+          "full_list_rate": 0.8130563798219584,
+          "variant_share_of_hits": 0.10526315789473684
+        },
+        "B2B": {
+          "n_customers": 302,
+          "precision_at_3": 0.04525386313465784,
+          "fill_rate": 0.9139072847682119,
+          "full_list_rate": 0.7980132450331126,
+          "variant_share_of_hits": 0.12195121951219512
+        },
+        "B2C": {
+          "n_customers": 35,
+          "precision_at_3": 0.1523809523809524,
+          "fill_rate": 1.0,
+          "full_list_rate": 0.9428571428571428,
+          "variant_share_of_hits": 0.0625
+        }
+      },
+      "B": {
+        "all": {
+          "n_customers": 172,
+          "precision_at_3": 0.060077519379844964,
+          "fill_rate": 0.872093023255814,
+          "full_list_rate": 0.6918604651162791,
+          "variant_share_of_hits": 0.06451612903225806
+        },
+        "B2B": {
+          "n_customers": 147,
+          "precision_at_3": 0.045351473922902494,
+          "fill_rate": 0.8503401360544217,
+          "full_list_rate": 0.6530612244897959,
+          "variant_share_of_hits": 0.1
+        },
+        "B2C": {
+          "n_customers": 25,
+          "precision_at_3": 0.14666666666666667,
+          "fill_rate": 1.0,
+          "full_list_rate": 0.92,
+          "variant_share_of_hits": 0.0
+        }
+      }
+    },
+    "heuristic": {
+      "A": {
+        "all": {
+          "n_customers": 337,
+          "precision_at_3": 0.12759643916913946,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.35658914728682173
+        },
+        "B2B": {
+          "n_customers": 302,
+          "precision_at_3": 0.11810154525386314,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.40186915887850466
+        },
+        "B2C": {
+          "n_customers": 35,
+          "precision_at_3": 0.20952380952380953,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.13636363636363635
+        }
+      },
+      "B": {
+        "all": {
+          "n_customers": 172,
+          "precision_at_3": 0.1375968992248062,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.39436619718309857
+        },
+        "B2B": {
+          "n_customers": 147,
+          "precision_at_3": 0.12698412698412698,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.4642857142857143
+        },
+        "B2C": {
+          "n_customers": 25,
+          "precision_at_3": 0.2,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.13333333333333333
+        }
+      }
+    },
+    "ltr": {
+      "A": {
+        "all": {
+          "n_customers": 337,
+          "precision_at_3": 0.1434223541048467,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.3586206896551724
+        },
+        "B2B": {
+          "n_customers": 302,
+          "precision_at_3": 0.1357615894039735,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.3983739837398374
+        },
+        "B2C": {
+          "n_customers": 35,
+          "precision_at_3": 0.20952380952380953,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.13636363636363635
+        }
+      },
+      "B": {
+        "all": {
+          "n_customers": 172,
+          "precision_at_3": 0.15503875968992248,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.4
+        },
+        "B2B": {
+          "n_customers": 147,
+          "precision_at_3": 0.14512471655328799,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.46875
+        },
+        "B2C": {
+          "n_customers": 25,
+          "precision_at_3": 0.21333333333333335,
+          "fill_rate": 1.0,
+          "full_list_rate": 1.0,
+          "variant_share_of_hits": 0.125
+        }
+      }
+    }
+  },
+  "disclosures": [
+    "Каталог и вендорные признаки — текущий снимок фида (может содержать информацию из будущего); цены не используются.",
+    "Ранжировщик обучен только на окнах строго до официального отсечения; официальный тестовый период не участвовал в подборе модели и гиперпараметров.",
+    "Метрики — наблюдение на истории, а не измеренный рост выручки."
+  ]
+}

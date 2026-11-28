@@ -2,6 +2,8 @@
 import argparse
 import html
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 import streamlit as st
@@ -10,9 +12,24 @@ from app.graph import render_graph
 from datetime import datetime
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--artifact-dir', required=True)
+parser.add_argument('--artifact-dir', default='artifacts/demo')
 args = parser.parse_args(sys.argv[1:])
+project_root = Path(__file__).resolve().parent.parent
 root = Path(args.artifact_dir)
+if not root.is_absolute():
+    root = project_root / root
+if not (root / 'manifest.json').exists():
+    result = subprocess.run(
+        [sys.executable, '-m', 'app.run_pipeline', '--synthetic', '--output', str(root)],
+        capture_output=True, text=True, check=False, cwd=project_root,
+    )
+    if result.returncode != 0:
+        st.error(f'Не удалось подготовить синтетическое демо: {result.stderr}')
+        st.stop()
+public_metrics = Path(__file__).with_name('official_metrics_public.json')
+if public_metrics.exists() and not (root / 'official' / 'official_metrics.json').exists():
+    (root / 'official').mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(public_metrics, root / 'official' / 'official_metrics.json')
 try:
     manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
     bundle = json.loads((root / manifest['bundle']).read_text(encoding='utf-8'))

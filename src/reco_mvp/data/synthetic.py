@@ -14,10 +14,17 @@ def make_synthetic_bundle(seed: int = 42) -> dict:
         segment = "B2B" if i % 3 == 0 else "B2C" if i % 3 == 1 else "unknown"
         customers.append({"customer_id": f"C{i+1:03d}", "segment": segment, "known_since": None})
     customers.append({"customer_id": "C061", "segment": "B2C", "known_since": "2026-05-20T00:00:00Z"})
+    demo_names = [
+        "Офисный пакет", "Антивирус для рабочих станций", "Облачное хранилище",
+        "Резервное копирование", "Корпоративная почта", "VPN-доступ",
+        "Менеджер паролей", "Мониторинг инфраструктуры", "Видеовстречи",
+        "Защита почты", "Управление устройствами", "Электронный документооборот",
+        "CRM-система", "Служба поддержки", "Панель аналитики",
+    ]
     products = []
     for i in range(15):
         products.append({
-            "product_id": f"P{i+1:02d}", "name": f"Synthetic product {i+1}",
+            "product_id": f"P{i+1:02d}", "name": demo_names[i],
             "category": "core" if i < 5 else "addon", "eligible_segments": ["B2B"] if i == 10 else None,
             "active": False if i == 14 else True,
             "available_from": (
