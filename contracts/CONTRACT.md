@@ -19,7 +19,8 @@ This document defines the shared data format and public interfaces.
   "data_mode": "synthetic",
   "customers": [{"customer_id":"0001","segment":"B2B","known_since":null}],
   "products": [{"product_id":"P01","name":"Example","category":null,
-    "eligible_segments":null,"active":true,"available_from":null}],
+    "eligible_segments":null,"active":true,"available_from":null,
+    "product_group":null}],
   "transactions": [{"transaction_id":"T01","order_id":null,"customer_id":"0001",
     "product_id":"P01","purchased_at":"2026-01-01T00:00:00Z","quantity":1.0}],
   "metadata": {"observation_end":"2026-07-01T00:00:00Z","warnings":[],
@@ -29,6 +30,11 @@ This document defines the shared data format and public interfaces.
 
 `transactions` contains normalized successful purchases after available cleanup.
 Repeated purchases are not removed merely because customer/product/date match.
+
+`product_group` is an optional family key (SKU variants of one product, e.g.
+subscription renewals). When present it enables the renewal boost
+(`renewal_weight`); when absent the recommender behaves exactly as before.
+Old bundles without the field remain valid.
 
 ## Data API
 

@@ -33,7 +33,7 @@ class RecommenderTests(unittest.TestCase):
             assert rec['rank'] == rank
             assert rec['source_product_ids'] == ['A']
             assert rec['support_count'] == 2
-            self.assertAlmostEqual(rec['score'], 2 / math.sqrt(3 * 2))
+            self.assertAlmostEqual(rec['score'], (2 / math.sqrt(3 * 2)) * math.sqrt(2) * math.log1p(2))
             assert rec['reason_type'] == 'co_purchase'
             assert rec['is_fallback'] is False
             assert '2 клиентов' in rec['reason_text']
@@ -77,7 +77,7 @@ class RecommenderTests(unittest.TestCase):
         rec = result['recommendations'][0]
         assert rec['source_product_ids'] == ['A', 'B']
         assert rec['support_count'] == 2
-        self.assertAlmostEqual(rec['score'], 2 / math.sqrt(3 * 2))
+        self.assertAlmostEqual(rec['score'], (2 / math.sqrt(3 * 2)) * math.sqrt(2) * math.log1p(2))
 
     def test_cold_start_and_popularity_fallback_flags(self):
         model = fit()
@@ -188,3 +188,82 @@ class RecommenderTests(unittest.TestCase):
                 json.dumps(response, allow_nan=False)
 if __name__ == '__main__':
     unittest.main()
+
+def test_graph_ranking_rewards_evidence_and_uses_only_past_popularity():
+    data = bundle()
+    # Extra buyers of C are observed before the cutoff; the connection to A
+    # remains supported by the same two clients as the connection to B.
+    for i in range(5):
+        cid = f'extra{i}'
+        data['customers'].append({'customer_id': cid, 'segment': 'B2C', 'known_since': None})
+        data['transactions'].append({'transaction_id': cid, 'order_id': None, 'customer_id': cid, 'product_id': 'C', 'purchased_at': '2026-05-02T00:00:00Z', 'quantity': 1.0})
+    model = fit(data)
+    result = model.recommend('query', strategy='graph_only')
+    assert ids(result) == ['C', 'B']
+    assert result['recommendations'][0]['score'] > result['recommendations'][1]['score']
+    changed = deepcopy(data)
+    for i in range(10):
+        cid = f'future_buyer{i}'
+        changed['customers'].append({'customer_id': cid, 'segment': 'B2C', 'known_since': CUTOFF})
+        changed['transactions'].append({'transaction_id': cid, 'order_id': None, 'customer_id': cid, 'product_id': 'B', 'purchased_at': CUTOFF, 'quantity': 1.0})
+    assert fit(changed).recommend('query', strategy='graph_only') == result
+
+
+def test_optional_recent_weight_uses_only_training_period():
+    data = bundle()
+    # The two candidates have identical long-term support; C has two extra
+    # recent buyers while B has two equally numerous older buyers.
+    for product, when in [('B', '2026-01-01T00:00:00Z'), ('B', '2026-01-01T00:00:00Z'), ('C', '2026-05-20T00:00:00Z'), ('C', '2026-05-20T00:00:00Z')]:
+        cid = f'extra-{len(data["transactions"])}'
+        data['customers'].append({'customer_id': cid, 'segment': 'B2C', 'known_since': None})
+        data['transactions'].append({'transaction_id': cid, 'order_id': None, 'customer_id': cid, 'product_id': product, 'purchased_at': when, 'quantity': 1.0})
+    assert ids(fit(data).recommend('query', strategy='graph_only')) == ['B', 'C']
+    model = fit(data, recency_weight=1, recency_days=120)
+    before = model.recommend('query', strategy='graph_only')
+    assert ids(before) == ['C', 'B']
+    future = deepcopy(data)
+    future['transactions'].append({'transaction_id': 'future', 'order_id': None, 'customer_id': 'u3', 'product_id': 'B', 'purchased_at': CUTOFF, 'quantity': 1.0})
+    assert fit(future, recency_weight=1, recency_days=120).recommend('query', strategy='graph_only') == before
+
+
+def test_recent_configuration_is_validated():
+    for config in ({'recency_days': 0}, {'recency_weight': -1}, {'recency_weight': float('nan')}):
+        with unittest.TestCase().assertRaises(ValueError):
+            Recommender(config)
+
+
+def test_optional_popularity_exponent_preserves_cutoff_and_contract():
+    data = bundle()
+    for i in range(5):
+        cid = f'pop-{i}'
+        data['customers'].append({'customer_id': cid, 'segment': 'B2C', 'known_since': None})
+        data['transactions'].append({'transaction_id': cid, 'order_id': None, 'customer_id': cid, 'product_id': 'C', 'purchased_at': '2026-05-10T00:00:00Z', 'quantity': 1.0})
+    cfg = {'popularity_exponent': 0.4}
+    result = fit(data, **cfg).recommend('query', strategy='graph_only')
+    assert ids(result) == ['C', 'B']
+    assert all(r['support_count'] == 2 and r['source_product_ids'] == ['A'] for r in result['recommendations'])
+    assert result['recommendations'][0]['score'] != fit(data).recommend('query', strategy='graph_only')['recommendations'][0]['score']
+    future = deepcopy(data)
+    future['transactions'].append({'transaction_id': 'future-pop', 'order_id': None, 'customer_id': 'u3', 'product_id': 'B', 'purchased_at': CUTOFF, 'quantity': 1.0})
+    assert fit(future, **cfg).recommend('query', strategy='graph_only') == result
+    for val in (-0.1, 1.1, float('nan'), '0.4'):
+        with unittest.TestCase().assertRaises(ValueError):
+            Recommender({'popularity_exponent': val})
+
+
+def test_combined_experimental_options_preserve_recommendation_safety():
+    data = bundle()
+    for i in range(3):
+        cid = f'combined-{i}'
+        data['customers'].append({'customer_id': cid, 'segment': 'B2C', 'known_since': None})
+        data['transactions'].append({'transaction_id': cid, 'order_id': None, 'customer_id': cid, 'product_id': 'C', 'purchased_at': '2026-05-10T00:00:00Z', 'quantity': 1.0})
+    config = {'popularity_exponent': 0.4, 'recency_weight': 1, 'recency_days': 120}
+    result = fit(data, **config).recommend('query', strategy='hybrid')
+    assert len(ids(result)) == len(set(ids(result)))
+    assert 'A' not in ids(result)
+    assert result['recommendations'][0]['source_product_ids'] == ['A']
+    assert result['recommendations'][0]['support_count'] == 2
+    future = deepcopy(data)
+    future['transactions'].append({'transaction_id': 'combined-future', 'order_id': None, 'customer_id': 'u3', 'product_id': 'B', 'purchased_at': CUTOFF, 'quantity': 1.0})
+    assert fit(future, **config).recommend('query', strategy='hybrid') == result
+    assert result['recommendations'][0]['score'] > fit(data, popularity_exponent=0.4).recommend('query', strategy='hybrid')['recommendations'][0]['score']

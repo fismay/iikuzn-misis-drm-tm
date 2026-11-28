@@ -42,3 +42,27 @@ st.subheader('Результаты бэктеста')
 st.dataframe(metrics.get('rows', []), hide_index=True)
 for warning in list(dict.fromkeys(bundle['metadata'].get('warnings', []) + metrics.get('warnings', []) + case.get('warnings', []))):
     st.caption(str(warning))
+official_path = root / 'official' / 'official_metrics.json'
+if official_path.exists():
+    try:
+        official = json.loads(official_path.read_text(encoding='utf-8'))
+    except ValueError:
+        official = None
+    if official:
+        st.subheader('Официальный протокол организаторов')
+        st.caption('Обучение и подбор модели — только на внутренних окнах строго до официального '
+                   'отсечения; официальный тестовый период использован один раз для финальной проверки.')
+        table = []
+        for name, res in official.get('methods', {}).items():
+            for group in ('A', 'B'):
+                for seg, label in (('all', 'все'), ('B2B', 'B2B'), ('B2C', 'B2C')):
+                    blk = res.get(group, {}).get(seg)
+                    if blk:
+                        table.append({'метод': name, 'группа': group, 'сегмент': label,
+                                      'клиентов': blk['n_customers'],
+                                      'Precision@3': f"{blk['precision_at_3']:.2%}",
+                                      'Fill Rate': f"{blk['fill_rate']:.1%}",
+                                      'доля вариантов': '—' if blk['variant_share_of_hits'] is None else f"{blk['variant_share_of_hits']:.1%}"})
+        st.dataframe(table, hide_index=True)
+        for note in official.get('disclosures', []):
+            st.caption(f'⚠️ {note}')

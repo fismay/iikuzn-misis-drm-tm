@@ -9,6 +9,9 @@ description = "Auditable cross-sell recommendation MVP"
 requires-python = ">=3.11"
 dependencies = ["pandas>=2.2,<3", "openpyxl>=3.1,<4"]
 
+[project.optional-dependencies]
+ranker = ["scikit-learn>=1.5,<2"]
+
 [tool.setuptools.packages.find]
 where = ["src", "."]
 include = ["reco_mvp*", "contracts*"]
