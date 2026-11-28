@@ -29,6 +29,12 @@ cases.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textC
 function render(){const c=cases[+select.value||0];document.getElementById('profile').innerHTML=`<span class="pill">${esc(c.segment)}</span><span class="pill">${esc(c.strategy)}</span><p class="muted">Дата отсечения: ${esc(c.as_of.slice(0,10))}</p>`;document.getElementById('history').innerHTML=[...new Set(c.history)].map(x=>`<span class="pill">${esc(x)}</span>`).join('')||'Нет покупок до даты отсечения';document.getElementById('recommendations').innerHTML=c.recommendations.map((r,i)=>`<article class="card"><h3><span class="rank">${i+1}</span>${esc(r.product_name)}</h3><p class="reason">${esc(r.reason_text)}</p><p class="reason">Подтверждений: ${esc(r.support_count)}${r.is_fallback?' · резервная выдача':''}</p></article>`).join('')||'<p>Нет подходящих товаров</p>'}
 select.addEventListener('change',render);render();
 const m=data.official.methods;document.getElementById('metrics').innerHTML=['A','B'].flatMap(g=>[['LTR',m.ltr],['Совместные покупки',m.baseline_copurchase]].map(([name,src])=>`<div class="metric"><strong>${(src[g].all.precision_at_3*100).toFixed(2)}%</strong><span>${esc(name)} · группа ${g}</span></div>`)).join('');
+if(new URLSearchParams(location.search).get('demo')==='1'){
+  setTimeout(()=>{select.value='1';render()},6000);
+  setTimeout(()=>{select.value='3';render()},12000);
+  setTimeout(()=>document.getElementById('metrics').scrollIntoView({behavior:'smooth',block:'center'}),18000);
+  setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),26000);
+}
 </script></html>'''.replace('PAYLOAD', payload)
 out = root / 'docs' / 'index.html'
 out.write_text(html, encoding='utf-8')
